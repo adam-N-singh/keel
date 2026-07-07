@@ -1,5 +1,6 @@
 {
   "name": "keel",
+  "description": "Discipline skills for AI coding agents.",
   "owner": { "name": "Adam Singh", "url": "https://github.com/adamNsingh" },
   "plugins": [
     {
