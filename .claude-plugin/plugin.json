@@ -1,0 +1,7 @@
+{
+  "name": "keel",
+  "description": "Discipline for AI coding agents: spec before code, verify before done, clean handoffs, safe context recovery.",
+  "author": { "name": "Adam Singh", "url": "https://github.com/adamNsingh" },
+  "repository": "https://github.com/adamNsingh/keel",
+  "license": "MIT"
+}

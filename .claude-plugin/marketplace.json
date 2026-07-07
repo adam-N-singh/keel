@@ -1,0 +1,11 @@
+{
+  "name": "keel",
+  "owner": { "name": "Adam Singh", "url": "https://github.com/adamNsingh" },
+  "plugins": [
+    {
+      "name": "keel",
+      "source": "./",
+      "description": "Discipline for AI coding agents — spec, plan, verify, review, handoff, recover."
+    }
+  ]
+}
