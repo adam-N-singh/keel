@@ -18,7 +18,7 @@ Discipline for AI coding agents. keel is a Claude Code plugin that adds six skil
 From within Claude Code:
 
 ```
-/plugin marketplace add adamNsingh/keel
+/plugin marketplace add adam-N-singh/keel
 /plugin install keel
 ```
 
