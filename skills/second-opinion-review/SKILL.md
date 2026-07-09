@@ -1,17 +1,16 @@
 ---
 name: second-opinion-review
 description: >-
-  Skeptical senior-engineer review of a proposed plan, code change, architecture decision, or
-  completed implementation before it is finalized. Use this whenever a change is risky, touches
-  many files, or affects authentication, payments, the database, security, deployment, or core
-  business logic; whenever the user asks whether an approach is sound, good, or safe ("is this a
-  good idea?", "review my plan", "give me a second opinion", "am I missing anything?", "is this
-  overengineered?"); and proactively whenever Claude is about to finalize, ship, or commit a major
-  change. It checks for hidden assumptions, overengineering, missing simpler alternatives, security
-  and data-loss risks, broken user flows, missing tests, weak verification, architecture mismatch,
-  unnecessary dependencies, and maintainability problems, then returns a Proceed / Revise / Stop
-  verdict. Err toward using it for any consequential or hard-to-reverse change even when not
-  explicitly asked.
+  Skeptical senior-engineer review with a Proceed / Revise / Stop verdict, run BEFORE finalizing,
+  shipping, or committing any risky or hard-to-reverse change — especially authentication,
+  payments, the database, security, deployment, core business logic, or changes touching many
+  files. Also triggers whenever the user asks whether an approach is sound, good, or safe ("is
+  this a good idea?", "review my plan", "give me a second opinion", "am I missing anything?", "is
+  this overengineered?"). It reviews a proposed plan, code change, architecture decision, or
+  completed implementation, checking for hidden assumptions, overengineering, missing simpler
+  alternatives, security and data-loss risks, broken user flows, missing tests, weak verification,
+  architecture mismatch, unnecessary dependencies, and maintainability problems. Err toward using
+  it for any consequential change even when not explicitly asked.
 ---
 
 # Second Opinion Review

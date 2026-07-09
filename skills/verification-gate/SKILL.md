@@ -1,6 +1,6 @@
 ---
 name: verification-gate
-description: Run this before telling the user a coding task is finished. Trigger it whenever Claude has edited code, generated or modified files, fixed a bug, refactored, changed dependencies, altered database code or migrations, changed API behavior, or touched frontend behavior, and ALWAYS before saying a task is "complete", "done", "working", or "fixed". It makes Claude inspect what changed, find and run the project's real verification commands (tests, lint, typecheck, build, run checks), separate verified facts from assumptions, and report exactly what was and was not checked, so completion claims rest on evidence instead of hope.
+description: ALWAYS run before saying a coding task is "complete", "done", "working", or "fixed" — never claim completion without it. Triggers whenever Claude has edited code, generated or modified files, fixed a bug, refactored, changed dependencies, altered database code or migrations, changed API behavior, or touched frontend behavior. It makes Claude inspect what changed, find and run the project's real verification commands (tests, lint, typecheck, build, run checks), separate verified facts from assumptions, and report exactly what was and was not checked, so completion claims rest on evidence instead of hope.
 ---
 
 # Verification Gate

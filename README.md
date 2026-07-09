@@ -24,7 +24,30 @@ From within Claude Code:
 
 ## Usage
 
-No commands to learn — the skills fire automatically based on context. When a task looks underspecified, keel writes a spec first; when a change spans files, it sequences the work; before claiming completion, it verifies; and so on. You can also invoke any skill explicitly by name.
+No commands to learn — the skills fire automatically based on context. When a task looks underspecified, keel writes a spec first; when a change spans files, it sequences the work; before claiming completion, it verifies; and so on. You can also invoke any skill explicitly by name (e.g. `/keel:verification-gate`).
+
+keel ships a small `SessionStart` hook that injects a ~250-token index of the six skills and their trigger conditions into each session. This keeps the skills reliably invocable on machines with many plugins installed, where Claude Code's skill-listing budget (1% of the context window) would otherwise drop their descriptions. Claude Code will ask you to approve the hook when you install or update the plugin.
+
+## Reliability on plugin-heavy setups
+
+Claude Code drops skill descriptions from context starting with the least-frequently-invoked skills. Two ways to guarantee keel full visibility:
+
+**Pin the skills** in your `~/.claude/settings.json` so their descriptions are always included:
+
+```json
+{
+  "skillOverrides": {
+    "keel:agent-spec-builder": "on",
+    "keel:implementation-planner": "on",
+    "keel:verification-gate": "on",
+    "keel:second-opinion-review": "on",
+    "keel:agent-handoff-summary": "on",
+    "keel:context-recovery": "on"
+  }
+}
+```
+
+**Bootstrap invocation frequency**: description retention is earned by use, so on day one invoke each skill once explicitly (`/keel:agent-spec-builder`, `/keel:verification-gate`, …). After that, automatic triggering sustains itself.
 
 ## License
 
