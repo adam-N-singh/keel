@@ -88,12 +88,12 @@ The skill also writes `state/last-verified` (commit hash + a hash of `git status
 
 ### 3.4 The digest
 
-`digest.md` is regenerated (by the skills as they write, and repairable by `/keel:context-recovery`) and capped at a strict token budget:
+`digest.md` is regenerated (by the skills as they write, and repairable by `/keel:context-recovery`) with an **adaptive size and a hard cap of 600 tokens**: generate the smallest digest the ledger's actual content needs — a young project naturally produces ~150 tokens; a mature ledger gets room for the last handoff's summary, recent decisions, and dead-end warnings. The cap, not a target, is what guards against bloat.
 
-- Every session start: goal (1–2 lines), open requirements, current phase, last verification status, most recent handoff pointer. Target ≤ 400 tokens.
+- Every session start: goal (1–2 lines), open requirements, current phase, last verification status, last handoff summary, dead-end warnings — smallest-first, dropping from the tail if the cap binds. Hard cap 600 tokens.
 - After compaction (`SessionStart` source `compact`): the **full requirement checklist + constraints** — re-anchoring at exactly the moment drift happens. This is the sharpest novel intervention in the design; to our knowledge nobody ships it.
 
-> **Open question (Adam):** digest budget — 400 tokens is ~keel 1.0's index cost. Comfortable ceiling, or push to 600 for richer continuations?
+Cost basis for the cap (2026-07 API pricing, cache-aware): the digest rides the cached prefix, so even a maxed 600-token digest on a ~110-turn session costs ~3–7 cents (Opus 4.8–Fable 5) and the 600-vs-400 delta is ~1–2 cents — while one avoided re-orientation lookup (a Read/Grep at full input price) repays the delta ~10×. E4 measures the real per-session cost; E2 measures whether digest richness reduces re-orientation.
 
 ---
 
