@@ -1,17 +1,23 @@
 # keel
 
-Discipline for AI coding agents. keel is a Claude Code plugin that adds six skills enforcing the habits that keep agent-driven development safe and reviewable: write a spec before code, sequence work into phases, verify before claiming "done", get a skeptical second opinion on risky changes, hand off cleanly between sessions, and recover full project context before touching an unfamiliar repo.
+Your agent's work, documented. keel is a Claude Code plugin with six skills that each produce a structured, reviewable artifact — a Working Spec, a phase plan, a verification report, a review verdict, a handoff note, a context summary — plus an opt-in enforcement gate that blocks a session from finishing with unverified code changes.
+
+Modern frontier models already practice much of this discipline inline: they think through specs, orient before editing, and verify before claiming completion. What inline work doesn't leave behind is the paper trail. A spec that existed only in the model's reasoning can't be reviewed; verification evidence that scrolled past in a transcript can't be audited; context that was never written down can't be recovered by the next session. keel's skills exist to produce those documents on demand, and its stop gate exists to enforce verification deterministically — without relying on the model's judgment.
 
 ## Skills
 
-| Skill | What it does |
+Each skill is an explicit command. Invoke it when you want the artifact.
+
+| Command | Artifact it produces |
 | --- | --- |
-| **agent-spec-builder** | Turns a vague, broad, or risky request into a short Working Spec before any code is written. |
-| **implementation-planner** | Breaks a task into safe, sequenced implementation phases with checkpoints before changes begin. |
-| **verification-gate** | Runs before any "done/fixed/working" claim — finds and runs the project's real tests, lint, and build, and separates verified facts from assumptions. |
-| **second-opinion-review** | Skeptical senior-engineer review of a plan, change, or architecture decision, ending in a Proceed / Revise / Stop verdict. |
-| **agent-handoff-summary** | Writes a handoff note capturing goal, changes, decisions, dead ends, and next steps so the next session, agent, or human can continue without rediscovery. |
-| **context-recovery** | Rebuilds full project context — docs, manifests, git history, uncommitted diffs, TODO notes — before continuing or modifying a paused or unfamiliar project. |
+| `/keel:agent-spec-builder` | A short Working Spec — goal, scope, constraints, and inferred requirements made explicit — before code is written. |
+| `/keel:implementation-planner` | A phase plan — sequenced implementation steps with checkpoints and per-phase verification. |
+| `/keel:verification-gate` | A verification report — the project's real tests, lint, typecheck, and build actually run, with verified facts separated from assumptions. |
+| `/keel:second-opinion-review` | A skeptical senior-engineer review of a plan, change, or architecture decision, ending in a Proceed / Revise / Stop verdict. |
+| `/keel:agent-handoff-summary` | A handoff note — goal, changes, decisions, dead ends, and next steps — so the next session, agent, or human continues without rediscovery. |
+| `/keel:context-recovery` | A project context summary rebuilt from docs, manifests, git history, and uncommitted diffs, delivered before any files are touched. |
+
+These artifacts matter most when the work will be reviewed, audited, or continued by someone else — teams, compliance, multi-agent pipelines, or your own future sessions.
 
 ## Install
 
@@ -22,32 +28,27 @@ From within Claude Code:
 /plugin install keel
 ```
 
-## Usage
+keel ships hooks (a session-start index and the stop gate below); Claude Code will ask you to approve them when you install or update the plugin.
 
-No commands to learn — the skills fire automatically based on context. When a task looks underspecified, keel writes a spec first; when a change spans files, it sequences the work; before claiming completion, it verifies; and so on. You can also invoke any skill explicitly by name (e.g. `/keel:verification-gate`).
+## The stop gate
 
-keel ships a small `SessionStart` hook that injects a ~250-token index of the six skills and their trigger conditions into each session. This keeps the skills reliably invocable on machines with many plugins installed, where Claude Code's skill-listing budget (1% of the context window) would otherwise drop their descriptions. Claude Code will ask you to approve the hook when you install or update the plugin.
+An opt-in `Stop` hook that blocks a session from finishing while it has unverified code changes, directing the model to run `/keel:verification-gate` first. Unlike advice, it fires deterministically — it does not depend on the model deciding to cooperate.
 
-## Reliability on plugin-heavy setups
+Opt in per project:
 
-Claude Code drops skill descriptions from context starting with the least-frequently-invoked skills. Two ways to guarantee keel full visibility:
-
-**Pin the skills** in your `~/.claude/settings.json` so their descriptions are always included:
-
-```json
-{
-  "skillOverrides": {
-    "keel:agent-spec-builder": "on",
-    "keel:implementation-planner": "on",
-    "keel:verification-gate": "on",
-    "keel:second-opinion-review": "on",
-    "keel:agent-handoff-summary": "on",
-    "keel:context-recovery": "on"
-  }
-}
+```
+touch .claude/keel-stop-gate
 ```
 
-**Bootstrap invocation frequency**: description retention is earned by use, so on day one invoke each skill once explicitly (`/keel:agent-spec-builder`, `/keel:verification-gate`, …). After that, automatic triggering sustains itself.
+Opt out by deleting that file. Inside a git repo, "unverified changes" means an uncommitted worktree; outside git, it means the session made any file edits (checked from the session transcript, so no git required).
+
+## The session-start index
+
+A `SessionStart` hook injects a ~350-token index of the six skills and when each artifact is useful. This keeps the skills reliably discoverable on plugin-heavy setups, where Claude Code's skill-listing budget (1% of the context window) drops descriptions from rarely-invoked skills. The index makes the model aware of the skills and able to answer "what applies here?" — it does not make the model auto-invoke them, and keel does not claim it will.
+
+## What keel deliberately doesn't claim
+
+Earlier versions of this README said the skills "fire automatically based on context." Controlled testing showed that on frontier models they don't: the models perform the underlying discipline inline and skip the invocation, regardless of how the skills are described or nudged. keel is therefore positioned around what testing supports — explicit invocation for the artifacts, and the stop gate for enforcement. Skills remain model-invocable, and weaker models or non-Claude agents (skills are a portable open format) may trigger them organically; keel just doesn't depend on it.
 
 ## License
 
