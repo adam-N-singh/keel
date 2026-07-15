@@ -1,6 +1,6 @@
 # keel 2.0 — Design: The Project Flight Recorder
 
-**Status:** draft for review — not yet implemented.
+**Status:** implemented 2026-07-15 (hooks, ledger spec in docs/LEDGER.md, all seven skills). Phase-0 mechanics checks (§4) and the E-runs (§7) remain to be executed before README claims are upgraded.
 **Grounding:** the keel 1.0 falsification (RESEARCH.md, 2026-07; advisory skills got 0 invocations on frontier models across all arms) and July-2026 ecosystem research (skills auto-activation broken ecosystem-wide at ~50%; winning plugins are hook-driven infrastructure, not advice; documented frontier pain points are goal drift, context rot after ~25–30 tool calls, session amnesia, and the clarification spiral).
 
 ---

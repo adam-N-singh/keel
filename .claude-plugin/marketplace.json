@@ -1,12 +1,12 @@
 {
   "name": "keel",
-  "description": "Discipline skills for AI coding agents.",
+  "description": "The project flight recorder for AI coding agents — a persistent engineering ledger, enforced by hooks.",
   "owner": { "name": "Adam Singh", "url": "https://github.com/adam-N-singh" },
   "plugins": [
     {
       "name": "keel",
       "source": "./",
-      "description": "Discipline for AI coding agents — spec, plan, verify, review, handoff, recover."
+      "description": "Project flight recorder: persistent .keel/ ledger (spec, decisions, verification, handoffs) + deterministic hooks (digest injection, post-compaction re-anchor, opt-in gates)."
     }
   ]
 }

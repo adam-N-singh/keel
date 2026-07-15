@@ -1,6 +1,6 @@
 ---
 name: agent-spec-builder
-description: Write a short Working Spec BEFORE coding any vague, broad, risky, or underspecified request — build, add, modify, refactor, debug, improve, redesign, or plan a feature. Also triggers when a request spans multiple files, touches architecture, data models, schemas, auth, or public interfaces, is hard to reverse, or is framed in product/outcome terms rather than an exact code change. Fire even when the user never says "spec" or "plan" — if you're about to start editing code on a non-trivial task and you're inferring what they mean, write the spec first. Skip it only for genuinely trivial, single-spot, unambiguous changes (a typo, a rename, a one-line fix the user fully specified), where a spec would be pure overhead.
+description: Write or update the project's Working Spec (.keel/spec.md) BEFORE coding any vague, broad, risky, or underspecified request — build, add, modify, refactor, debug, improve, redesign, or plan a feature. Triggers when a request spans multiple files, touches architecture, data models, schemas, auth, or public interfaces, is hard to reverse, or is framed in product/outcome terms rather than an exact code change. This is the skill keel's first-edit gate routes to when it blocks an edit. The spec's requirement checklist (R1, R2, ...) is what keel re-injects after compaction and what verification records tick off — so getting requirements stated here is what protects them for the rest of the project. Skip only for genuinely trivial, single-spot, unambiguous changes.
 ---
 
 # Agent Spec Builder
@@ -10,180 +10,145 @@ description: Write a short Working Spec BEFORE coding any vague, broad, risky, o
 When an agent gets a broad request — "add billing", "make the export faster", "refactor
 auth" — and starts editing immediately, it commits to one interpretation before checking
 whether it's the right one. The cost shows up later: code that solves the wrong problem,
-touches files it shouldn't, or has to be unwound. By then the agent has spent real effort
-and the user has to reverse-engineer what happened.
+touches files it shouldn't, or has to be unwound.
 
 A **Working Spec** moves that interpretation to the front, while it's still cheap to
-correct. It's short — usually ten to twenty lines, not a document — and it gives the user
-exactly one thing to react to before expensive work begins. This is the inversion of
-"think, then code": instead of reasoning privately and diving in, you make the plan
-*inspectable* for a beat, then build. Cheap alignment before costly implementation.
+correct. It's short — usually ten to twenty lines — and it gives the user exactly one
+thing to react to before expensive work begins.
 
-The spec is a checkpoint, not a wall. Most of the time you write it and keep going.
+In keel 2.0 the spec is not just a message in the transcript: it is **the living
+`.keel/spec.md`** at the heart of the project ledger. Its requirement checklist is what
+the SessionStart hook re-injects after compaction (the moment constraints usually get
+lost), what the verification-gate ticks off with evidence, and what the first-edit gate
+checks for. A constraint that never makes it into `spec.md` is a constraint no future
+session can recover.
 
 ## When to write one (and when not to)
 
-Write a Working Spec when the request is any of:
+Write or update the Working Spec when the request is any of:
 
 - **Vague or interpretable** — more than one reasonable reading exists.
 - **Multi-file** — the change spans more than a file or two.
-- **Architectural or stateful** — it touches data models, schemas, migrations, auth, public
-  APIs, or anything other code depends on.
-- **Hard to reverse** — migrations, deletions, deploys, anything with a real blast radius.
-- **Product-framed** — stated as an outcome ("users should be able to…") rather than a
-  specific diff.
+- **Architectural or stateful** — data models, schemas, migrations, auth, public APIs.
+- **Hard to reverse** — migrations, deletions, deploys, real blast radius.
+- **Product-framed** — stated as an outcome rather than a specific diff.
 
-Skip it and just do the work when the change is small, local, and unambiguous: a typo, a
-rename, a one-line fix, a function the user fully specified. A spec there is friction, not
-value — and reflexively producing one for trivial work trains the user to ignore them.
-
-**Scale the spec to the task.** A two-file feature gets a tight spec. A schema migration on
-a live system gets a careful one. A borderline case gets three lines — Goal, Plan, one risk
-— which is still better than silently guessing.
+Skip it when the change is small, local, and unambiguous: a typo, a rename, a one-line
+fix the user fully specified. **Scale the spec to the task** — a borderline case gets a
+goal line and two requirements, which is still better than silently guessing.
 
 ## Workflow
 
-1. **Restate the real goal** in one or two sentences — the *outcome* the user wants, not the
-   literal instruction. If the literal request and the apparent goal diverge, say so; that
-   gap is often the most valuable thing the spec surfaces.
+1. **Read the existing ledger first.** If `.keel/spec.md` exists, this is an *update*,
+   not a rewrite: keep existing requirement IDs stable, add new requirements with the
+   next free `R<n>`, and never delete a requirement — mark it dropped (`[~]`, citing a
+   decision) if it no longer applies. Check `decisions.md` and `deadends.md` so the spec
+   doesn't reopen a settled question.
 
-2. **Look before assuming.** On a real codebase, read the files the change would touch:
-   entry points, the modules named or implied, relevant config and schema, and any existing
-   feature that does something similar (so you match its conventions instead of inventing
-   new ones). This is the single highest-leverage step — most wrong specs come from guessing
-   at code that could have been read in thirty seconds. Populate *Current project facts* only
-   with what you actually observed, and cite each one (path, function, line) so the user can
-   verify it.
+2. **Restate the real goal** in one or two sentences — the *outcome* the user wants, not
+   the literal instruction. If the literal request and the apparent goal diverge, say so.
 
-3. **Separate facts from assumptions, ruthlessly.** A fact is something you read or
-   confirmed. An assumption is anything inferred, defaulted, or hoped. Quietly promoting an
-   assumption to a fact is exactly how an agent drifts off course — keep the line bright.
+3. **Look before assuming.** Read the files the change would touch: entry points, the
+   modules named or implied, relevant config and schema, any existing feature that does
+   something similar. Most wrong specs come from guessing at code that could have been
+   read in thirty seconds. Cite each observed fact (path, function, line).
 
-4. **Bound the work.** State what's in scope and, just as importantly, what's deliberately
-   out of scope. Naming the omissions lets the user object to them now rather than discover
-   them later, and keeps the change from sprawling.
+4. **Separate facts from assumptions, ruthlessly.** A fact is something you read or
+   confirmed. An assumption is anything inferred, defaulted, or hoped. Keep the line bright.
 
-5. **Define success** as observable, checkable conditions. "Tests pass" is weak;
-   "`POST /invoices` returns 201 with the persisted id, and the invoice shows in the
-   customer's portal" is checkable.
+5. **Extract requirements as checkable checklist items.** This is the load-bearing step.
+   Each requirement is one observable, verifiable behavior with a stable ID:
 
-6. **Surface risks** — what could break, what's irreversible, what's genuinely uncertain,
-   where the blast radius reaches. Pair each risk with how you'd mitigate or verify it.
+   ```markdown
+   - [ ] R1: Settlement amounts round half-up to 2 decimal places
+   - [ ] R2: Members can be removed only when their balance is zero
+   ```
 
-7. **Sketch a small implementation plan** — ordered steps a competent agent could follow,
-   sized to the task. The sequence and the touch-points, not pseudocode.
+   The exact shape `- [ ] R<n>: <text>` is machine-checked by keel's hooks. "Tests pass"
+   is not a requirement; "`POST /invoices` returns 201 with the persisted id" is.
+   Constraints the user stated ("no new dependencies", "keep the v1 API stable") go under
+   `## Constraints` — that section is re-injected verbatim after compaction.
 
-8. **Ask blocking questions only.** A question is blocking when you genuinely can't proceed
-   sensibly without the answer *and* no reasonable default exists. Everything else becomes a
-   labeled assumption the user can veto. Burying the user in optional questions defeats the
-   purpose — the spec is meant to reduce back-and-forth, not generate it.
+6. **Bound the work.** In scope, and just as importantly, deliberately out of scope.
+
+7. **Surface risks**, each paired with how you'd mitigate or verify it.
+
+8. **Ask blocking questions only.** A question is blocking when you can't proceed sensibly
+   without the answer *and* no reasonable default exists. Everything else becomes a
+   labeled assumption the user can veto.
+
+## Writing the spec
+
+**With a ledger** (`.keel/` exists — the normal case): write/update `.keel/spec.md` in
+this structure, then show the user the spec (or the diff of what changed, if updating):
+
+```markdown
+# Working Spec
+Updated: <today>
+
+## Goal
+## Constraints
+## Requirements
+- [ ] R1: ...
+## Assumptions
+## Out of scope
+## Risks
+```
+
+Keep the `## Goal`, `## Constraints`, and `## Requirements` headings spelled exactly —
+the post-compaction hook extracts them by name. After writing, **update `.keel/digest.md`**:
+refresh the `Goal:` and `Open requirements:` lines (smallest digest the content needs,
+hard cap 600 tokens).
+
+**Without a ledger**: present the spec inline in the same structure and mention once that
+`/keel:init` would make it persistent. Don't create `.keel/` unprompted — init owns onboarding.
 
 After the spec: if nothing blocks and the work is reversible, continue into implementation.
 For large, risky, or irreversible changes, present the spec and wait for a quick go-ahead.
 Let the size of the risk decide whether you pause, not habit.
 
-## Output format
-
-Produce this structure. Omit a section only when it's genuinely empty (most often *Blocking
-questions*).
-
-```
-## Working Spec
-
-**Goal**
-<the real outcome, 1–2 sentences>
-
-**User / stakeholder**
-<who this is for and what they're ultimately trying to accomplish>
-
-**Current project facts**
-<observed from the code/config, each with a source — path / function / line.
- "Not yet checked: X" is a valid, honest entry.>
-
-**Assumptions**
-<inferred or defaulted; each one phrased so the user can veto it>
-
-**In scope**
-<what this change will do>
-
-**Out of scope**
-<what it deliberately will not do>
-
-**Success criteria**
-<observable, checkable conditions — how we'll know it worked>
-
-**Risks**
-<what could break / is irreversible / is uncertain — each with a mitigation or check>
-
-**Implementation plan**
-<ordered steps, sized to the task>
-
-**Blocking questions**
-<only questions that truly block progress; omit this heading entirely if none>
-```
-
 ## Keep it honest and lean
 
-- A spec that's all assumptions and no facts means you skipped the "look before assuming"
-  step. Go read the code.
+- A spec that's all assumptions and no facts means you skipped "look before assuming."
+  Go read the code.
 - "Not yet checked" beats a confident guess. An honest partial spec is more useful than a
   complete, wrong one.
-- Don't perform certainty. If the right design is genuinely unclear, put that in *Risks* or
-  *Blocking questions* rather than silently picking one and presenting it as settled.
-- Don't pad. If a section is one line, it's one line. The value is in the thinking the
-  format forces, not in filling every heading.
+- Don't perform certainty. If the right design is genuinely unclear, put that in *Risks*
+  rather than silently picking one.
+- Don't pad. The value is in the thinking the format forces, not in filling every heading.
+- Never mark a requirement `[x]` here — only the verification-gate does that, with evidence.
 
 ## Example
 
-A compressed example of the spec doing its job on a vague request.
-
 **Request:** "Can you make the report export faster? It's slow."
 
-```
-## Working Spec
+```markdown
+# Working Spec
+Updated: 2026-07-15
 
-**Goal**
-Cut the wait on report export so it feels responsive (rough target: a couple of seconds
-for a typical report), without changing the exported output.
+## Goal
+Cut the wait on report export so it feels responsive (~2s for a typical report),
+without changing the exported output.
 
-**User / stakeholder**
-End users who export reports and currently sit through a noticeable delay.
+## Constraints
+- Exported file must remain byte-identical to current output.
+- No new dependencies.
 
-**Current project facts**
-- Export lives in reports/export.py:generate_pdf().
-- Rows are built by querying once per row inside a loop — an N+1 pattern (export.py:42).
-- No caching layer observed around the export path.
-- Not yet checked: typical report row count in production.
+## Requirements
+- [ ] R1: A ~1,000-row report exports in under 2s locally
+- [ ] R2: Exported CSV is byte-identical to the pre-change output for the same report
 
-**Assumptions**
-- "Slow" refers to the per-row query loop, not PDF rendering itself. (Unverified — I'll
-  confirm by timing before changing anything.)
+## Assumptions
+- "Slow" refers to the per-row query loop in reports/export.py:42 (N+1 pattern observed),
+  not PDF rendering. Unverified — will confirm by timing before changing anything.
 
-**In scope**
-- Replace the per-row query loop with a single batched query, and measure before/after.
-
-**Out of scope**
+## Out of scope
 - Swapping the PDF library; moving export to a background job.
 
-**Success criteria**
-- A ~1,000-row report exports in under 2s locally.
-- Exported file is byte-identical to the current output.
-
-**Risks**
-- Batching could change row ordering → add an explicit sort and diff the output to confirm
-  it's unchanged.
-
-**Implementation plan**
-1. Add timing to confirm the loop is the real bottleneck.
-2. Replace the per-row loop with one batched query.
-3. Re-time and compare.
-4. Diff the output against a known-good export.
-
-(No blocking questions — I'll verify the bottleneck myself rather than ask.)
+## Risks
+- Batching could change row ordering → add an explicit sort; R2 catches regressions.
 ```
 
-Note what the format forced: facts carry citations, the unknown is labeled "not yet
-checked" instead of guessed, the one assumption is flagged as unverified with a plan to
-confirm it, and there are no questions because the agent can answer them itself by reading
-and timing. That's the spec earning its place — not paperwork, but a thirty-second
-guardrail against building the wrong thing.
+Note what the format forced: the observed fact is cited, the unknown is labeled instead of
+guessed, and both requirements are checkable — the verification-gate can later tick R1 and
+R2 with a timing run and a diff, and no compaction can lose them.

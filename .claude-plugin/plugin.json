@@ -1,6 +1,6 @@
 {
   "name": "keel",
-  "description": "Discipline for AI coding agents: spec before code, verify before done, clean handoffs, safe context recovery.",
+  "description": "The project flight recorder for AI coding agents: a persistent .keel/ engineering ledger (spec, decisions, verification evidence, handoffs, dead ends) written by explicit skills and enforced by deterministic hooks — digest injection at session start, post-compaction requirement re-anchoring, opt-in first-edit and stop-verification gates.",
   "author": { "name": "Adam Singh", "url": "https://github.com/adam-N-singh" },
   "repository": "https://github.com/adam-N-singh/keel",
   "license": "MIT"

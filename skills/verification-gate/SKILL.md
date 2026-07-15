@@ -1,79 +1,108 @@
 ---
 name: verification-gate
-description: ALWAYS run before saying a coding task is "complete", "done", "working", or "fixed" — never claim completion without it. Triggers whenever Claude has edited code, generated or modified files, fixed a bug, refactored, changed dependencies, altered database code or migrations, changed API behavior, or touched frontend behavior. It makes Claude inspect what changed, find and run the project's real verification commands (tests, lint, typecheck, build, run checks), separate verified facts from assumptions, and report exactly what was and was not checked, so completion claims rest on evidence instead of hope.
+description: ALWAYS run before saying a coding task is "complete", "done", "working", or "fixed" — never claim completion without it. Runs the project's real verification commands (tests, lint, typecheck, build), separates verified facts from assumptions, appends a durable evidence record to the project ledger (.keel/verification.md), ticks the requirement checkboxes the evidence covers, and stamps the verified working-tree state that keel's stop gate checks. This is the skill the stop gate routes to when it blocks a stop. Triggers whenever code was edited, files generated or modified, a bug fixed, a refactor done, dependencies changed, database code or migrations touched, or API/frontend behavior altered.
 ---
 
 # Verification Gate
 
 ## Why this exists
 
-Claude tends to announce a coding task is done based on what the code *should* do, before confirming it actually does. A false "complete" is expensive: the user trusts it, moves on, and finds the breakage later, often somewhere harder to trace back. This skill is a gate that sits between "I changed the code" and "it's done." Before any completion claim, you find the project's own checks, run the safe ones, and report the evidence. Saying "I verified X by running Y and it passed" is worth far more than "this should work."
+Claude tends to announce a coding task is done based on what the code *should* do, before
+confirming it actually does. A false "complete" is expensive: the user trusts it, moves on,
+and finds the breakage later.
+
+This skill is the gate between "I changed the code" and "it's done" — and in keel 2.0 its
+output is **durable evidence**: an append-only record in `.keel/verification.md`, requirement
+checkboxes ticked only when a run evidenced them, and a machine fingerprint
+(`.keel/state/last-verified`) that lets the stop gate prove, deterministically, whether the
+current tree was ever verified. "I verified X by running Y and it passed" — written down,
+with the tree state stamped — is worth far more than "this should work," and it's the only
+form of verification a future session can trust.
 
 ## The core rule
 
-Never describe a task as complete, done, fixed, or working unless verification supports that claim. If verification was skipped, partial, or failed, say so plainly and set the status to match. When unsure between two statuses, pick the more conservative one.
-
-## When to run
-
-Run this before reporting completion of any change that touches behavior or shippable artifacts: edited code, generated or modified files, a bug fix, a refactor, a dependency change, database code or migrations, API behavior, or frontend behavior. If you are about to type "done", "fixed", "working", "complete", or "that should do it", stop and run the gate first.
+Never describe a task as complete, done, fixed, or working unless verification supports that
+claim. If verification was skipped, partial, or failed, say so plainly and set the status to
+match. When unsure between two statuses, pick the more conservative one.
 
 ## Workflow
 
-**1. Inspect what changed.**
-Run `git status` and `git diff` (and `git diff --staged`) to see exactly which files changed and how. If it is not a git repo, or the edits are only in this session, enumerate the files you touched and what you did to each (logic, config, deps, schema, API, UI). You cannot verify a change you cannot name.
+**1. Inspect what changed.** `git status`, `git diff` (and `--staged`). If not a git repo,
+enumerate the files you touched this session and what you did to each. You cannot verify a
+change you cannot name.
 
-**2. Identify the stack.**
-Look for signal files: `package.json` + lockfile (`package-lock.json`/`pnpm-lock.yaml`/`yarn.lock`/`bun.lockb`), `tsconfig.json`, `pyproject.toml`/`setup.py`/`requirements.txt`, `Cargo.toml`, `go.mod`, `pom.xml`/`build.gradle`, `*.csproj`/`*.sln`, `Gemfile`, `composer.json`, `Makefile`/`justfile`. A repo can mix several.
+**2. Read the spec's open requirements.** If `.keel/spec.md` exists, its requirement
+checklist is your verification target list: which of the open `R<n>` items should this run
+evidence? A verification run that ignores the requirements verifies the wrong thing precisely.
 
-**3. Find the verification commands.**
-Project-specific instructions beat generic defaults, so check in this order:
-- `CLAUDE.md`, `AGENTS.md`, `README`, `CONTRIBUTING`, `docs/` for documented commands.
-- The config files themselves: `package.json` `"scripts"`, `Makefile`/`justfile` targets, `pyproject.toml` (`[tool.*]`, tox), CI files (`.github/workflows/*`, `.gitlab-ci.yml`) which often list the exact commands the project gates on.
-- The condensed catalog below as a fallback. See `references/stack-commands.md` for how to extract the real command names per ecosystem.
+**3. Identify the stack and find the real commands.** Project-specific instructions beat
+generic defaults, in this order: `CLAUDE.md`/`AGENTS.md`/`README`/`CONTRIBUTING`/`docs/`;
+then the config files themselves (`package.json` scripts, `Makefile`/`justfile` targets,
+`pyproject.toml`, CI workflows — these list the exact commands the project gates on); then
+the condensed catalog in `references/stack-commands.md`.
 
 **4. Decide what is safe to run.**
-- Safe to run now: tests, linters, typecheckers, builds/compiles, `format --check`, `--help`/`--version`, dry runs, and a short app-run smoke check under a timeout.
-- Do NOT run autonomously: anything that mutates shared or production state, real migrations against a real database, deploys, destructive file operations, commands needing secrets or credentials you do not have, calls with side effects on external services, or watchers with no timeout. For DB changes, prefer a dry-run or a local/test database only.
-- When unsure, do not run it. List it under "What was not checked" with the reason.
+- Safe: tests, linters, typecheckers, builds, `format --check`, dry runs, a short smoke run
+  under a timeout.
+- Not autonomously: anything mutating shared or production state, real migrations against a
+  real database, deploys, destructive file operations, commands needing credentials you don't
+  have, watchers with no timeout. When unsure, don't run it — list it under "not checked"
+  with the reason.
 
-**5. Run and capture.**
-Run the safe commands. Record the *exact* command and the *real* result, including key error lines on failure. Do not paraphrase success into existence; show what you actually saw. If the project declares a tool that is not installed in this environment (for example pytest in `pyproject.toml` but not on the path), run the closest valid equivalent (for example `python -m unittest`) and record the substitution under "What was not checked" — a passing equivalent is real evidence, but it is not the exact gate the project defined, and collection or config differences could change the result.
+**5. Run and capture.** Record the *exact* command and the *real* result, including key
+error lines on failure. If the project declares a tool that isn't installed, run the closest
+valid equivalent and record the substitution — a passing equivalent is real evidence, but it
+is not the exact gate the project defined.
 
-**6. Map each change to a check.**
-Confirm the right kind of check ran for each kind of change:
-- Dependencies changed -> install resolves + build/test pass.
-- Database/schema/migration -> migration validates (dry-run or test DB) + affected tests.
-- API behavior -> contract/integration tests, or at minimum typecheck plus the tests covering the touched endpoints.
-- Frontend behavior -> build + typecheck + lint, plus component/e2e tests if they exist, or a clearly described manual check.
-If the relevant check does not exist, that gap is itself a finding.
+**6. Map each change to a check.** Dependencies changed → install resolves + build/test.
+Schema/migration → dry-run or test DB + affected tests. API behavior → contract/integration
+tests or typecheck + endpoint tests. Frontend → build + typecheck + lint, plus component/e2e
+or a described manual check. A missing relevant check is itself a finding.
 
-**7. Separate fact from assumption.**
-Verified means a command ran and you saw the result. Everything else (reasoning, "should work", "the logic looks right") is an assumption and must be labeled as one. Do not let assumptions dress up as facts.
+**7. Separate fact from assumption.** Verified means a command ran and you saw the result.
+Everything else is an assumption and must be labeled as one.
 
-**8. Decide the status and write the report** using the exact format below.
+**8. Write the ledger record** (with a ledger — the normal case):
 
-## Stack -> likely commands (condensed fallback)
+Append to `.keel/verification.md`, using the next free `V<n>`:
 
-| Stack (signal) | Typecheck | Lint | Test | Build / run |
-|---|---|---|---|---|
-| Node/TS (`package.json`) | `tsc --noEmit` or `npm run typecheck` | `eslint .` / `npm run lint` | `npm test` | `npm run build` |
-| Python (`pyproject.toml`) | `mypy .` / `pyright` | `ruff check` / `flake8` | `pytest` | `python -m build`; run `python -m <pkg>` |
-| Rust (`Cargo.toml`) | `cargo check` | `cargo clippy` | `cargo test` | `cargo build` |
-| Go (`go.mod`) | `go vet ./...` | `golangci-lint run` | `go test ./...` | `go build ./...` |
-| Java (`pom.xml`/Gradle) | (compile) | (plugin) | `mvn test` / `./gradlew test` | `mvn -q verify` / `./gradlew build` |
-| .NET (`*.csproj`/`*.sln`) | (build) | `dotnet format --verify-no-changes` | `dotnet test` | `dotnet build` |
-| Ruby (`Gemfile`) | — | `rubocop` | `bundle exec rspec` / `rake test` | — |
-| PHP (`composer.json`) | `phpstan analyse` | (script) | `phpunit` / `composer test` | — |
-| Make/just | — | `make lint` | `make test` | `make build` / `make check` |
+```markdown
+## V<n> — <YYYY-MM-DD HH:MM UTC> — commit <short-hash or "none">
+- Ran: `npm test` (142 passed), `npx tsc --noEmit` (clean), `npm run lint` (clean)
+- Verified: R1, R2 via test suite; R2 additionally in browser
+- Assumed, not verified: mobile layout; concurrent-edit behavior
+- Failed: <only if something failed — the key error lines>
+```
 
-Use the package manager the lockfile points to (npm/pnpm/yarn/bun). Prefer a documented `make ci`, `npm run check`, or similar aggregate command when one exists.
+Then **tick the requirements this run evidenced** in `.keel/spec.md` — `- [ ] R2: ...`
+becomes `- [x] R2: ...  (verified: V<n>)`. Tick only what the evidence actually covers;
+a requirement you reasoned about but didn't exercise stays open. Update the
+`Open requirements:` and `Last verification:` lines in `.keel/digest.md`.
+
+**9. Stamp the verified state** — after the turn's last code change, so the stamp matches
+what was verified. If the stop gate's block message gave you a `bash '<path>' --record`
+command, run that. Otherwise run this equivalent block (same fingerprint the gate computes —
+content hash of all tracked + untracked non-ignored files, excluding `.keel/`):
+
+```bash
+mkdir -p .keel/state
+files=$(git ls-files -co --exclude-standard | grep -v '^\.keel/' | sort -u \
+  | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done)
+fp=$({ printf '%s\n' "$files"; [ -n "$files" ] && printf '%s\n' "$files" | git hash-object --stdin-paths; } | git hash-object --stdin)
+{ printf '%s\n' "$fp"; printf 'recorded=%s commit=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$(git rev-parse --short HEAD 2>/dev/null || echo none)"; } > .keel/state/last-verified
+```
+
+(Outside a git repo, skip the stamp — the stop gate uses transcript-based detection there.)
+
+**10. Report inline** using the format below, and decide the status. Without a ledger,
+the inline report is the whole output; mention once that `/keel:init` would make it durable.
 
 ## Output format
 
 ALWAYS produce this report before any completion claim. Keep it tight; evidence over prose.
 
 ```
-## Verification Report
+## Verification Report  (recorded as V<n>)
 
 **Changed files**
 - path/to/file — what changed, in one line
@@ -82,17 +111,14 @@ ALWAYS produce this report before any completion claim. Keep it tight; evidence 
 - `exact command` → pass / fail (exit code or short result)
   (or: none — and why)
 
-**Results**
-- concise outcome per command, with the key evidence (error lines on failure)
-
-**What passed**
-- ...
+**Requirements evidenced**
+- R1 ✓ (test suite), R2 ✓ (browser) — R4 still open, not exercised
 
 **What failed**
-- ... (include the actual error, briefly)
+- ... (the actual error, briefly; omit section if nothing failed)
 
 **What was not checked**
-- ... and why (no e2e suite, requires prod DB, no credentials, out of scope, etc.)
+- ... and why (no e2e suite, requires prod DB, no credentials, out of scope)
 
 **Remaining risks**
 - ...
@@ -102,18 +128,24 @@ ALWAYS produce this report before any completion claim. Keep it tight; evidence 
 
 ## Deciding the final status
 
-- **Complete** — every relevant safe check ran and passed; nothing material is left unverified, or the only unverified items are genuinely out of scope and stated as such.
-- **Partially complete** — some checks passed but others failed, could not run, or do not exist; or the change cannot be fully verified in this environment.
-- **Not complete** — a relevant check failed in a way tied to the change, or no meaningful verification was possible for a change that needs it.
+- **Complete** — every relevant safe check ran and passed; nothing material is left
+  unverified, or the only unverified items are genuinely out of scope and stated as such.
+- **Partially complete** — some checks passed but others failed, could not run, or don't
+  exist; or the change can't be fully verified in this environment.
+- **Not complete** — a relevant check failed in a way tied to the change, or no meaningful
+  verification was possible for a change that needs it.
 
-If "Commands run" is `none` for a behavioral change, the status cannot be Complete. If no checks exist at all, say so honestly ("no automated checks found; relied on typecheck/build and a manual diff review") and mark it Partially complete rather than claiming more than you confirmed.
+If "Commands run" is `none` for a behavioral change, the status cannot be Complete. If a
+check failed, the record still gets written — a failed verification is evidence too, and the
+requirement stays `[ ]`. Do **not** stamp `last-verified` when the status is Not complete:
+the stamp asserts "this tree was verified," and a failing tree wasn't.
 
 ## Example
 
-A user asks for a bug fix in a TS/Node service. After editing:
+A bug fix in a TS/Node service. After editing:
 
 ```
-## Verification Report
+## Verification Report  (recorded as V8)
 
 **Changed files**
 - src/auth/token.ts — fixed expiry comparison using seconds instead of ms
@@ -123,18 +155,14 @@ A user asks for a bug fix in a TS/Node service. After editing:
 - `npm run lint` → pass
 - `npm test -- src/auth` → fail (1 of 14)
 
-**Results**
-- Typecheck and lint clean.
-- token.test.ts "rejects expired token" failed: expected 401, got 200.
-
-**What passed**
-- Compilation, lint, and 13 of 14 auth tests.
+**Requirements evidenced**
+- R5 (expired tokens rejected) — NOT ticked: its test failed at the equal-to-expiry boundary.
 
 **What failed**
-- The test covering the exact bug — the fix does not yet handle the equal-to-expiry boundary.
+- token.test.ts "rejects expired token": expected 401, got 200.
 
 **What was not checked**
-- Full suite (ran only src/auth); integration tests (require a running Redis I don't have here).
+- Full suite (ran only src/auth); integration tests (require a running Redis).
 
 **Remaining risks**
 - Boundary case at exact expiry; other modules importing this helper not yet run.
@@ -142,4 +170,5 @@ A user asks for a bug fix in a TS/Node service. After editing:
 **Final status:** Not complete
 ```
 
-The honest "Not complete" here is the whole point: the change compiled and looked right, but the test that matters caught it. Reporting that beats a confident "fixed."
+The honest "Not complete" is the whole point — and it's now in the ledger, so the next
+session opens knowing R5 is still broken instead of trusting a transcript that scrolled away.
