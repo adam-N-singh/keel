@@ -90,7 +90,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   recorded=$(sed -n '1p' ".keel/state/last-verified" 2>/dev/null)
   [ -n "$current" ] && [ "$current" = "$recorded" ] && exit 0
   cat <<EOF
-{"decision": "block", "reason": "keel stop gate: this session edited files and the verification record is stale (the working tree no longer matches .keel/state/last-verified). Invoke keel:verification-gate — run the project's real checks (tests, lint, typecheck, build), append the record to .keel/verification.md, update any requirement checkboxes it evidenced — and as the final step stamp the verified state by running: bash '$self' --record. If a verification record covering the current tree was already written this turn, run only the --record command and finish."}
+{"decision": "block", "reason": "keel stop gate: this session edited files and the verification record is stale (the working tree no longer matches .keel/state/last-verified). Invoke keel:verification-gate — run the project's real checks (tests, lint, typecheck, build), append the record to .keel/verification.md, update any requirement checkboxes it evidenced — and as the final step stamp the verified state by running: bash '$self' --record. If a verification record covering the current tree was already written this turn, run only the --record command and finish. If verification is genuinely impossible or the user explicitly declined it, leave a record instead of nothing: append a skip entry to .keel/decisions.md ('## D<n> — <date> — verification skipped' plus the one-line reason) and finish — an unverified change with a recorded skip beats a silent one."}
 EOF
 else
   cat <<'EOF'
