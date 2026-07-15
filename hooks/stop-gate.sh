@@ -77,7 +77,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
   edits=$(grep -E '"name"[[:space:]]*:[[:space:]]*"(Edit|MultiEdit|Write|NotebookEdit)"' "$transcript" 2>/dev/null \
     | grep -oE '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' \
     | sed 's/.*:[[:space:]]*"//; s/"$//' \
-    | tr '\\' '/' \
+    | tr '\\' '/' | tr -s '/' \
     | grep -v '/\.keel/' | grep -v '^\.keel/')
   [ -n "$edits" ] && session_edited=1
 fi

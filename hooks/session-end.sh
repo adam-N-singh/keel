@@ -31,7 +31,7 @@ if [ -n "$transcript" ] && [ -f "$transcript" ]; then
   edited=$(grep -E '"name"[[:space:]]*:[[:space:]]*"(Edit|MultiEdit|Write|NotebookEdit)"' "$transcript" 2>/dev/null \
     | grep -oE '"file_path"[[:space:]]*:[[:space:]]*"[^"]*"' \
     | sed 's/.*:[[:space:]]*"//; s/"$//' \
-    | tr '\\' '/' \
+    | tr '\\' '/' | tr -s '/' \
     | grep -v '/\.keel/' | grep -v '^\.keel/' \
     | sort -u)
 fi
@@ -54,7 +54,8 @@ fi
 
 mkdir -p ".keel/handoffs"
 {
-  printf '\n## Session record — %s\n' "$(date -u '+%Y-%m-%d %H:%M UTC')"
+  # ASCII only: Windows PowerShell 5.1 Get-Content misrenders UTF-8 punctuation.
+  printf '\n## Session record -- %s\n' "$(date -u '+%Y-%m-%d %H:%M UTC')"
   printf -- '- Session: %s (ended: %s)\n' "${session_id:-unknown}" "${reason:-unknown}"
   printf -- '- Git: %s\n' "$git_summary"
   if [ -n "$edited" ]; then

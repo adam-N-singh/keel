@@ -23,7 +23,7 @@ grep -q '^GATE_FIRST_EDIT=1' ".keel/config" || exit 0
 # Always allow ledger writes (spec.md, decisions.md, digest, ...).
 file_path=$(printf '%s' "$input" \
   | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-  | tr '\\' '/')
+  | tr '\\' '/' | tr -s '/')
 case "$file_path" in
   .keel/*|*/.keel/*) exit 0 ;;
 esac
