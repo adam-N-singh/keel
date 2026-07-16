@@ -64,10 +64,14 @@ keel ships hooks; Claude Code will ask you to approve them on install/update. Th
 
 ## What keel claims — and what it doesn't (yet)
 
+Claims are bounded by controlled testing (n=3 per arm; protocol and raw analysis in [DESIGN.md](DESIGN.md) §7 and the test harness).
+
 - **Claimed, by construction:** hooks fire deterministically; the ledger persists across sessions and compaction; the artifacts are reviewable and committable. None of this depends on the model choosing to cooperate.
-- **Claimed, from testing:** advisory skills alone do not get invoked by frontier models — that's the 1.0 falsification this design answers.
-- **Under test, not yet claimed:** that digest injection measurably reduces re-orientation cost, and that post-compaction re-anchoring measurably improves constraint survival. The experiment plan and kill criteria are in [DESIGN.md](DESIGN.md) §7; README claims will be updated when the runs are in.
-- **Cost:** the digest rides the cached prompt prefix; worst case (maxed 600-token digest) is on the order of a few cents per long session. Measured numbers will be published with the E4 run.
+- **Claimed, from testing — continuity (the headline result):** on identical half-built projects continued with "finish whatever remains", the ledger arm completed the intended scope **3/3** (requirements verified and ticked); the cold-start arm **0/3** — all three controls independently invented the *same* plausible-but-wrong scope from code clues. Session amnesia doesn't look like failure; it looks like confident wrong work. The ledger's measured value is outcome correctness, not orientation speed (controls actually oriented faster — into the wrong scope).
+- **Claimed, from testing — gates:** every gate outcome leaves a record. The first-edit gate fired 3/3 with a paper trail in every case (full spec capture, partial capture, or a reasoned recorded skip). The stop gate blocked 3/3 when a user explicitly forbade verification; the model sided with the user 3/3 (the gate does not — and should not — coerce against an explicit instruction) but recorded the skip in `decisions.md` 3/3. Absent a countermand, the armed gate produced verification without ever needing to block. The gate's real contract: **deterrence plus recorded exceptions.**
+- **Claimed, from 1.0 testing:** advisory skills alone do not get invoked by frontier models — the falsification this design answers.
+- **Under test, not yet claimed:** that post-compaction re-anchoring measurably improves constraint survival. The mechanism is proven live (the re-anchor fires and lands in context after real compaction), but the outcome experiment requires compaction mid-build, which headless runs cannot trigger (`/compact` doesn't execute under `claude -p`) — an interactive-compaction run is the one experiment remaining.
+- **Cost, measured:** the digest itself is cache-riding and costs cents. The real overhead is the work the gates cause — spec capture, real verification runs, ledger writes — which roughly doubled spend on small tasks (≈ +$3 on a ~$3.50 build; ≈ +$0.75 on a ~$0.75 continuation). On the continuation experiment the cheaper arm delivered the wrong outcome 3/3, so cost per *correct* outcome favored the ledger.
 
 ## License
 

@@ -79,23 +79,26 @@ test — still reportable, weaker); do PreToolUse denies hold under
 
 ## 5. Remaining tasks, in order
 
-1. **Adam launches the full run** (only step needing a human terminal):
-   `cd C:\Users\adams\projects\Personal\skilltests\eruns` then `.\runner.cmd` → type `GO`.
-   2–4 h, tens of dollars. PowerShell-safe (see §6 WSL trap).
-2. **Grade**: `node grade.js` runs automatically at the end; then analyze
-   `results/REPORT.md` + transcripts. E1 validity: only count runs where a compaction
-   actually occurred, per-run. Baselines: Phase-2 orientation was 29 calls (keel-aware
-   but ledgerless) vs 17 (control); quick-run E2 pair was 13 vs 11.
-3. **Write results into DESIGN.md** status block (pattern: see current Phase-0/E3 entries)
-   and **apply §7 kill criteria**: no E1 constraint-survival delta AND no E2 orientation
-   delta → shrink positioning to gates + explicit commands; otherwise upgrade README's
-   "under test, not yet claimed" section with measured numbers (E4 gives the cost figures
-   promised there).
-4. Commit + push + `claude plugin update keel@keel`.
-5. Deferred/optional: strip DEP0190 warning in grade.js (cosmetic); consider a PreCompact
-   snapshot hook (reserved in DESIGN §4, so far unnecessary); Haiku-floor test from
-   RESEARCH §7 (never run); publish decision on RESEARCH.md (still repo-tracked as of
-   `cd4bb1e`, was once deliberately untracked — Adam decides).
+**UPDATE 2026-07-16: the full E-run happened and was graded.** Full analysis:
+`skilltests/eruns/results/ANALYSIS-2026-07-16.md`; verdict recorded in DESIGN.md
+status block; README claims upgraded (E2 continuity 3/3-vs-0/3 claimed with data;
+gate contract = deterrence + recorded exceptions, validated n=3; E4 costs
+published; ledger SURVIVES the §7 kill criteria on E2's outcome delta).
+
+Remaining:
+
+1. **E1-interactive** — the one experiment left. Headless `/compact` under
+   `-p --resume` does NOT execute (model sees literal text), so no E1 run ever
+   compacted and the drift-outcome delta is still unmeasured (mechanism proven in
+   Phase-0). Protocol: re-run e1 A/B pairs from an interactive terminal, issuing
+   `/compact` mid-build (or pad the build to overflow context organically), then
+   `node grade.js` — the Compactions column validates each run. Seeds regenerate
+   via `setup.sh`; clear the e1 tags in `results/` first.
+2. Deferred/optional: strip DEP0190 warning in grade.js (cosmetic); consider a
+   PreCompact snapshot hook (reserved in DESIGN §4, so far unnecessary);
+   Haiku-floor test from RESEARCH §7 (never run); publish decision on RESEARCH.md
+   (Adam decides); consider whether E2's headline result belongs in the README
+   intro rather than the claims section (marketing call — Adam's).
 
 ## 6. Hard-won environment knowledge (do not re-learn these)
 
