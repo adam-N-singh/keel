@@ -1,0 +1,4 @@
+# keel gate toggles - 1 to enable, 0 to disable
+# Enabled deliberately for dogfooding (2026-07-16); flip to 0 to opt out.
+GATE_FIRST_EDIT=1
+GATE_STOP_VERIFY=1

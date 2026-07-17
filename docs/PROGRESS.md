@@ -1,5 +1,10 @@
 # keel 2.0 — Progress & Handoff
 
+> **2026-07-16: this repo now dogfoods its own ledger.** For *current* state, read
+> `.keel/` (digest, spec R1–R4, plan phase, decisions D1–D3, dead ends) — it is
+> injected at every session start and stays fresher than this document. This file
+> remains as the deep historical record through the full E-runs.
+
 **Date:** 2026-07-15. **Written for:** any agent (or human) picking this up cold.
 **Read first:** [DESIGN.md](../DESIGN.md) (the keel 2.0 design + experiment plan §7),
 [RESEARCH.md](RESEARCH.md) (the 1.0 falsification that motivated 2.0),
